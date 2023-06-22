@@ -1,4 +1,5 @@
 import glob
+import time
 import os
 import pandas as pd
 import argparse
@@ -20,7 +21,7 @@ def main(video_dir, video_flag, gt_flag):
         # frames = [cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB) for filename in filenames]
         frames = [np.array(Image.open(filename)) for filename in filenames]
     else:
-        video = cv2.VideoCapture(video_dir)
+        video = cv2.VideoCapture(0)
         # load video
         if not video.isOpened():
             print('[ERROR] video file not loaded')
@@ -49,16 +50,48 @@ def main(video_dir, video_flag, gt_flag):
     # starting tracking
     tracker = ECOTracker(is_color)
     vis = True
+    # video = cv2.VideoCapture(0)  # Use 0 for the default camera
+
+    # Allow the camera to warm up by waiting for a moment
+    time.sleep(1)
+
+    # Read a single frame from the video stream
+    ret, frame = video.read()
+
+    # Check if the frame is read correctly
+    if not ret:
+        print("Failed to read frame")
+        exit()
+
+    # Display the captured frame
+    cv2.imshow("Captured Frame", frame)
+
+    # Wait for the "Esc" key press to exit
+    # while cv2.waitKey(0) != 27:  # 27 corresponds to the "Esc" key
+    #     pass
+
+    # Release the VideoCapture object
+    video.release()
+
+    # Close windows
+    # cv2.destroyAllWindows()
+
+    # cv2.waitKey(1)
     bbox = cv2.selectROI(frame)
     print('[INFO] select ROI and press ENTER or SPACE')
     print('[INFO] cancel selection by pressing C')
     print(bbox)
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
+    # cv2.destroyAllWindows()
+    # cv2.waitKey(1)
     tracker.init(frame, bbox)
     bbox = (bbox[0]-1, bbox[1]-1,
             bbox[0]+bbox[2]-1, bbox[1]+bbox[3]-1)
     idx = 0
+    video = cv2.VideoCapture(0)
+    # load video
+    if not video.isOpened():
+        print('[ERROR] video file not loaded')
+        sys.exit()
     while True:
         ok, frame = video.read()
         if not ok:
@@ -140,6 +173,7 @@ def main(video_dir, video_flag, gt_flag):
             break
     video.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
